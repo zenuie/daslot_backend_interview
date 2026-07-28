@@ -133,3 +133,52 @@ def test_skipped_invalid_word_emits_warning(wd, caplog):
 
 
 # --- End Part A：Exact Match ---------------------------------------------------------
+
+
+# --- Part B：Prefix Search (startswith) ---------------------------------------
+
+def test_startswith_returns_true_for_existing_prefix(wd):
+    wd.setup(["cat", "car", "bar"])
+    assert wd.startswith("ca") is True
+    assert wd.startswith("ba") is True
+
+
+def test_startswith_returns_false_for_absent_prefix(wd):
+    wd.setup(["cat", "car", "bar"])
+    assert wd.startswith("cr") is False
+
+
+def test_startswith_true_when_prefix_is_a_full_word(wd):
+    # 完整字本身也是合法前綴
+    wd.setup(["cat"])
+    assert wd.startswith("cat") is True
+
+
+def test_startswith_is_case_sensitive(wd):
+    wd.setup(["cat"])
+    assert wd.startswith("ca") is True
+    assert wd.startswith("CA") is False
+
+
+def test_startswith_rejects_fullwidth_prefix(wd):
+    wd.setup(["cat"])
+    assert wd.startswith("ｃａ") is False
+
+
+def test_startswith_empty_prefix_matches_non_empty_dictionary(wd):
+    # 空前綴：字典非空 → True（每個字都以 "" 開頭）
+    wd.setup(["cat"])
+    assert wd.startswith("") is True
+
+
+def test_startswith_empty_prefix_on_empty_dictionary_is_false(wd):
+    assert wd.startswith("") is False
+
+
+@pytest.mark.parametrize("bad", [123, None, ["ca"]])
+def test_startswith_rejects_non_str(wd, bad):
+    wd.setup(["cat"])
+    with pytest.raises(TypeError):
+        wd.startswith(bad)
+
+# --- End Part B：Prefix Search ---------------------------------------

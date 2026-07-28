@@ -61,6 +61,14 @@ class WordDictionary:
         logger.debug(f"input={word!r} output={result!r}")
         return result
 
+    def startswith(self, word: str) -> bool:
+        if not isinstance(word, str):
+            raise TypeError(f"startswith() expects str, got {type(word).__name__}")
+        node = self._walk(word)  # 走樹邏輯
+        result = node is not None and (node.is_word or bool(node.children))
+        logger.debug(f"input={word!r} output={result!r}")
+        return result
+
 
 if __name__ == "__main__":
     logging.basicConfig(
@@ -72,3 +80,5 @@ if __name__ == "__main__":
     wd.contains("cat")
     wd.contains("ca")
     wd.contains("Cat")
+    wd.startswith("ca")
+    wd.startswith("cr")
