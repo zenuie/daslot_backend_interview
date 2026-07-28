@@ -22,6 +22,15 @@ class WordDictionary:
     def __init__(self):
         self._root = TrieNode()
 
+    def _walk(self, chars: str) -> TrieNode | None:
+        """ 走樹邏輯 """
+        node = self._root
+        for char in chars:
+            node = node.children.get(char)
+            if node is None:
+                return None
+        return node
+
     # setup / contains / startsWith / search 見下
     def setup(self, words: list[str]) -> None:
         """ 建立基礎樹 """
@@ -44,6 +53,14 @@ class WordDictionary:
         self._root = new_root  # Calling setup again replaces the previous dictionary contents
         logger.info(f"input={words!r}")
 
+    def contains(self, word: str) -> bool:
+        if not isinstance(word, str):
+            raise TypeError(f"contains() expects str, got {type(word).__name__}")
+        node = self._walk(word)  # 走樹邏輯
+        result = node is not None and node.is_word  # check word flag
+        logger.debug(f"input={word!r} output={result!r}")
+        return result
+
 
 if __name__ == "__main__":
     logging.basicConfig(
@@ -52,3 +69,6 @@ if __name__ == "__main__":
     )
     wd = WordDictionary()
     wd.setup(["cat", "car", "bar"])
+    wd.contains("cat")
+    wd.contains("ca")
+    wd.contains("Cat")
