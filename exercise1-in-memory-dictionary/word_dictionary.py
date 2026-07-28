@@ -4,6 +4,7 @@ import re
 logger = logging.getLogger(__name__)
 
 _WORD_RE = re.compile(r"[a-zA-Z]+")
+_PATTERN_RE = re.compile(r"[a-zA-Z?*]+")
 
 
 class TrieNode:
@@ -30,6 +31,34 @@ class WordDictionary:
             if node is None:
                 return None
         return node
+
+    def _match(self, node: TrieNode, pattern: str, i: int) -> bool:
+        pattern_len = len(pattern)
+        # base case: pattern停在完整字上
+        if i == pattern_len:
+            return node.is_word
+        char = pattern[i]
+
+        if char == "*":
+            # 跳過 *，node 不動、i+1
+            if self._match(node, pattern, i + 1):
+                return True
+            # 歷遍child，* 保留
+            for child in node.children.values():
+                if self._match(child, pattern, i):
+                    return True
+            return False
+
+        if char == "?":
+            # single char = any child
+            for child in node.children.values():
+                if self._match(child, pattern, i + 1):
+                    return True
+            return False
+
+        # 不是特殊字符
+        child = node.children.get(char)
+        return self._match(child, pattern, i + 1) if child else False
 
     # setup / contains / startsWith / search 見下
     def setup(self, words: list[str]) -> None:
@@ -69,6 +98,16 @@ class WordDictionary:
         logger.debug(f"input={word!r} output={result!r}")
         return result
 
+    def search(self, word: str) -> bool:
+        if not isinstance(word, str):
+            raise TypeError(f"search() expects str, got {type(word).__name__}")
+        if not _PATTERN_RE.fullmatch(word):
+            logger.warning(f"invalid pattern={word!r}")
+            return False
+        result = self._match(self._root, word, 0)
+        logger.debug(f"input={word!r} output={result!r}")
+        return result
+
 
 if __name__ == "__main__":
     logging.basicConfig(
@@ -82,3 +121,8 @@ if __name__ == "__main__":
     wd.contains("Cat")
     wd.startswith("ca")
     wd.startswith("cr")
+    wd.search("c?t")
+    wd.search("*at")
+    wd.search("ca*")
+    wd.search("cr*")
+    wd.search("*")

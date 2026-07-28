@@ -182,3 +182,77 @@ def test_startswith_rejects_non_str(wd, bad):
         wd.startswith(bad)
 
 # --- End Part B：Prefix Search ---------------------------------------
+
+
+# --- Part C：Wildcard Search (search) ---------------------------------------
+
+def test_search_question_mark_matches_one_char(wd):
+    wd.setup(["cat", "car", "bar"])
+    assert wd.search("c?t") is True
+
+
+def test_search_star_matches_zero_or_more(wd):
+    wd.setup(["cat", "car", "bar"])
+    assert wd.search("*at") is True   # * = "c"
+    assert wd.search("ca*") is True   # * = "t" / "r"
+
+
+def test_search_returns_false_when_no_word_matches(wd):
+    wd.setup(["cat", "car", "bar"])
+    assert wd.search("cr*") is False
+
+
+def test_search_star_matches_any_word_when_not_empty(wd):
+    wd.setup(["cat"])
+    assert wd.search("*") is True
+
+
+def test_search_star_on_empty_dictionary_is_false(wd):
+    assert wd.search("*") is False
+
+
+def test_search_question_mark_is_length_sensitive(wd):
+    # "c?" 只有 2 字元，cat/car 是 3 字元 → 不匹配
+    wd.setup(["cat", "car"])
+    assert wd.search("c?") is False
+
+
+def test_search_multiple_wildcards(wd):
+    wd.setup(["cat", "car", "bar"])
+    assert wd.search("*a*") is True
+    assert wd.search("?a?") is True
+
+
+def test_search_star_matches_full_word_exactly(wd):
+    # "cat*" 的 * 吃 0 個字元，仍匹配 cat
+    wd.setup(["cat"])
+    assert wd.search("cat*") is True
+
+
+def test_search_is_case_sensitive(wd):
+    wd.setup(["cat"])
+    assert wd.search("ca*") is True
+    assert wd.search("CA*") is False   # 'C' 不匹配 'c'
+
+
+def test_search_invalid_pattern_returns_false(wd):
+    # 全形 / 數字 → 非法 pattern → False
+    wd.setup(["cat"])
+    assert wd.search("ｃ*") is False
+    assert wd.search("c1t") is False
+
+
+def test_search_invalid_pattern_emits_warning(wd, caplog):
+    wd.setup(["cat"])
+    with caplog.at_level(logging.WARNING):
+        wd.search("c#t")
+    assert any("invalid pattern" in r.message for r in caplog.records)
+
+
+@pytest.mark.parametrize("bad", [123, None, ["c?t"]])
+def test_search_rejects_non_str(wd, bad):
+    wd.setup(["cat"])
+    with pytest.raises(TypeError):
+        wd.search(bad)
+
+# --- End Part C：Wildcard Search ---------------------------------------
