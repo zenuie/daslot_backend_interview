@@ -81,3 +81,21 @@ wd.search("c?t")      # True   ? 代表一個字母、* 代表零或多個字母
 ```bash
 uv run pytest exercise1-in-memory-dictionary/ -v
 ```
+
+---
+
+## Exercise 2 — Distributed Document Search Platform（系統設計）
+
+> PDF 明訂**只要設計、不需實作程式碼**。設計 → **[`exercise2-system-design/README.md`](exercise2-system-design/README.md)**(單一檔案、由淺入深:前段是最簡流程 + 面試報告 TL;DR 大略,往下是完整設計——架構圖、選型取捨、API/schema、一致性、安全、失敗處理、部署、需求涵蓋對照)。
+
+**一句話**:以 **PostgreSQL 為 source of truth、OpenSearch 為可重建的 derived view**;上傳與索引之間用 **Outbox + RabbitMQ** 解耦(不遺失、不重複);搜尋走無狀態可水平擴展的讀取路徑,權限用 **DAC + defense-in-depth** 維持強一致。
+
+**規模基準**:1M users · 10M docs · 20TB · 上傳 100/s(200 MB/s)· 搜尋 3,000/s · <500ms · 5 分鐘新鮮度 → 讀寫比 30:1。
+
+**樞紐決策**:
+- 搜尋是 Postgres 的 **derived view**(能重建)→ 一致性 / reindex / 失敗處理全從這長出來。
+- **Transactional Outbox** 消滅 dual-write → 解掉「上傳成功卻搜不到」。
+- **讀寫解耦**(佇列)各自擴縮 → 搜尋暴增不影響上傳。
+- **bytes 直連物件儲存、不經 app** → 扛住 200 MB/s。
+
+→ 架構圖、流程圖、每步流量承載、取捨、失敗處理全在 **[設計文件](exercise2-system-design/README.md)**。
